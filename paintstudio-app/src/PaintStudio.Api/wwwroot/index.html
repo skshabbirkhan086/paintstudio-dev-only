@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PaintStudio · Creative Canvas</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">✦</div><div><strong>paintstudio</strong><small>CREATIVE WORKSPACE</small></div></div>
+      <p class="aside-heading">WORKSPACE</p>
+      <button class="nav-item active" id="nav-editor"><span>◩</span> Canvas Editor</button>
+      <button class="nav-item" id="nav-gallery"><span>▦</span> My Gallery <span id="gallery-count" class="count">0</span></button>
+      <div class="sidebar-spacer"></div>
+      <div class="tip"><span class="tip-spark">✧</span><strong>Make something beautiful</strong><p>Your ideas deserve a canvas. Save your creation to your gallery when it is ready.</p></div>
+      <div class="aside-foot">PaintStudio v1.0 <span>•</span> .NET 10</div>
+    </aside>
+    <main class="main">
+      <header class="topbar"><div><div class="eyebrow">YOUR PERSONAL CREATIVE SPACE</div><h1 id="page-heading">Canvas Editor</h1></div><div class="top-actions"><span class="status-dot"></span><span id="status">Ready to create</span></div></header>
+      <section id="editor-view">
+        <div class="editor-heading"><div><h2>Every masterpiece starts here <span>✳</span></h2><p>Pick a color, choose a brush, and start painting.</p></div><button id="btn-gallery" class="button secondary">◫ &nbsp; My Gallery</button></div>
+        <div class="editor-layout">
+          <div class="toolbar">
+            <div class="section-heading">TOOLS</div>
+            <div class="tool-row"><button id="brush" class="tool selected" aria-pressed="true" title="Brush">✎ <small>Brush</small></button><button id="eraser" class="tool" aria-pressed="false" title="Eraser">▱ <small>Eraser</small></button></div>
+            <hr />
+            <div class="section-heading">COLORS</div>
+            <div class="colors" id="palette"></div>
+            <label class="custom-color">Custom color <input id="color-input" type="color" value="#6647ed" aria-label="Choose custom color" /></label>
+            <hr />
+            <div class="section-heading">BRUSH SIZE <span id="brush-label">8 px</span></div>
+            <input id="brush-size" type="range" min="2" max="45" value="8" aria-label="Brush size" />
+            <div class="brush-demo"><span id="brush-preview"></span></div>
+            <hr />
+            <div class="section-heading">HISTORY</div>
+            <div class="two-buttons"><button id="undo" class="subtle" title="Undo Ctrl+Z">↶ Undo</button><button id="redo" class="subtle" title="Redo Ctrl+Y">↷ Redo</button></div>
+            <button id="clear" class="subtle wide danger">⌫ Clear canvas</button>
+          </div>
+          <div class="canvas-card"><div class="canvas-top"><span><span class="canvas-icon">◈</span> Untitled canvas</span><span class="dimensions">960 × 580 px</span></div><div class="canvas-surround"><canvas id="drawing" width="960" height="580" aria-label="Painting canvas"></canvas></div><div class="canvas-bottom"><span>✦ &nbsp; Let creativity flow</span><div><button id="download" class="button secondary">↓ Download PNG</button><button id="save" class="button primary">✧ &nbsp; Save Painting</button></div></div></div>
+        </div>
+      </section>
+      <section id="gallery-view" hidden><div class="editor-heading"><div><h2>Your masterpieces <span>✳</span></h2><p>Your saved creations live here. Open one to continue drawing.</p></div><button id="btn-new" class="button primary">+ &nbsp; New Painting</button></div><div class="gallery-grid" id="gallery-grid"></div></section>
+      <footer>Built with care using ASP.NET Core, SQL Server, and a little imagination. <span>✺</span></footer>
+    </main>
+  </div>
+  <dialog id="save-dialog"><form id="save-form"><h2>Give your artwork a name</h2><p>It will appear in your personal gallery.</p><label for="painting-name">Painting title</label><input type="text" id="painting-name" maxlength="100" required placeholder="e.g. My colorful sunset" /><div class="dialog-actions"><button type="button" id="cancel-save" class="button secondary">Cancel</button><button type="submit" class="button primary">Save artwork</button></div></form></dialog>
+  <script src="/app.js" defer></script>
+</body>
+</html>

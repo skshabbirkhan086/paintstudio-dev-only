@@ -1,0 +1,10 @@
+output "environment" { value = "dev" }
+output "region" { value = local.payload.region }
+output "eks_cluster_name" { value = module.eks.cluster_name }
+output "ecr_url" { value = module.ecr.repository_url }
+output "rds_endpoint" { value = module.sqlserver.endpoint }
+output "rds_master_secret_arn" { value = module.sqlserver.master_user_secret_arn }
+output "external_secrets_role_arn" { value = aws_iam_role.external_secrets.arn }
+output "fluentbit_role_arn" { value = aws_iam_role.fluentbit.arn }
+output "vpc_id" { value = module.network.vpc_id }
+output "opensearch_endpoint" { value = try(module.opensearch[0].endpoint, "") }

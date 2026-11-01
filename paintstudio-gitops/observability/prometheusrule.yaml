@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: paintstudio-dev-alerts
+  namespace: monitoring
+  labels: { release: monitoring }
+spec:
+  groups:
+    - name: paintstudio-dev.rules
+      rules:
+        - alert: PaintStudioDevNoReadyPods
+          expr: kube_deployment_status_replicas_available{deployment="paintstudio",namespace="paintstudio-dev"} < 1
+          for: 5m
+          labels: { severity: critical, environment: dev }
+          annotations:
+            summary: "Dev PaintStudio has zero available pods"
+        - alert: PaintStudioDevDown
+          expr: up{namespace="paintstudio-dev",service="paintstudio"} == 0
+          for: 3m
+          labels: { severity: warning, environment: dev }
+          annotations:
+            summary: "Dev PaintStudio metrics endpoint is unreachable"

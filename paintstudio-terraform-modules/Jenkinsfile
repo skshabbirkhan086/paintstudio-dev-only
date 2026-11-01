@@ -1,0 +1,18 @@
+pipeline {
+  agent { label 'terraform-aws' }
+  options { timestamps(); disableConcurrentBuilds() }
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Gitleaks / Format') { steps { sh 'gitleaks git --redact --exit-code 1 .'; sh 'terraform fmt -check -recursive' } }
+    stage('Checkov') { steps { sh 'checkov -d . --framework terraform --quiet' } }
+    stage('Validate Modules') {
+      steps { sh '''
+        for mod in modules/*; do
+          terraform -chdir="$mod" init -backend=false
+          terraform -chdir="$mod" validate
+        done
+      ''' }
+    }
+  }
+  post { always { cleanWs() } }
+}

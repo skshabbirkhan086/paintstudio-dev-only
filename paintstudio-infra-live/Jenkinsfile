@@ -1,0 +1,37 @@
+pipeline {
+  agent { label 'terraform-aws' }
+  options { timestamps(); disableConcurrentBuilds(); timeout(time: 90, unit: 'MINUTES') }
+  parameters {
+    booleanParam(name: 'APPLY_DEV', defaultValue: false, description: 'If checked, manually approve and apply the Dev plan')
+  }
+  environment { TF_IN_AUTOMATION = 'true'; AWS_REGION = 'ap-south-1' }
+  stages {
+    stage('Checkout') { steps { checkout scm } }
+    stage('Secret + Format Checks') { steps {
+      sh 'gitleaks git --redact --exit-code 1 .'
+      sh 'terraform fmt -check -recursive'
+    } }
+    stage('Terraform Security') { steps {
+      sh 'checkov -d . --framework terraform --quiet'
+      sh 'tflint --recursive'
+    } }
+    stage('Initialize Dev State') { steps {
+      sh 'terraform init -input=false -reconfigure -backend-config=backends/dev.hcl'
+      sh 'terraform validate'
+    } }
+    stage('Dev Plan') { steps {
+      sh 'terraform plan -input=false -var=payload_file=payloads/dev.json -out=tfplan'
+      sh 'terraform show -no-color tfplan > plan.txt'
+      archiveArtifacts artifacts: 'plan.txt', fingerprint: true
+    } }
+    stage('Approve Dev Apply') {
+      when { allOf { branch 'main'; expression { params.APPLY_DEV } } }
+      steps { input message: 'Approve applying the reviewed PaintStudio DEV plan?', ok: 'Apply DEV' }
+    }
+    stage('Apply Dev') {
+      when { allOf { branch 'main'; expression { params.APPLY_DEV } } }
+      steps { sh 'terraform apply -input=false tfplan' }
+    }
+  }
+  post { always { cleanWs() } }
+}

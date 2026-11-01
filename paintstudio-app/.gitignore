@@ -1,0 +1,10 @@
+.env
+**/bin/
+**/obj/
+**/TestResults/
+*.trx
+.vs/
+.idea/
+.DS_Store
+publish/
+gitops/

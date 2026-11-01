@@ -1,0 +1,42 @@
+# Template values. Render with scripts/install-logging.sh only after OpenSearch is enabled.
+serviceAccount:
+  create: true
+  name: fluent-bit
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::REPLACE_ACCOUNT_ID:role/paintstudio-dev-fluent-bit
+config:
+  service: |
+    [SERVICE]
+        Flush 5
+        Log_Level info
+        Daemon off
+        Parsers_File parsers.conf
+  inputs: |
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*paintstudio*.log
+        Parser cri
+        Tag kube.*
+        Read_from_Head Off
+        Mem_Buf_Limit 10MB
+        Skip_Long_Lines On
+  filters: |
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Kube_Tag_Prefix kube.var.log.containers.
+        Merge_Log On
+        Keep_Log Off
+  outputs: |
+    [OUTPUT]
+        Name opensearch
+        Match kube.*
+        Host REPLACE_OPENSEARCH_HOST
+        Port 443
+        TLS On
+        AWS_Auth On
+        AWS_Region ap-south-1
+        Logstash_Format On
+        Logstash_Prefix paintstudio-dev
+        Suppress_Type_Name On
+        Retry_Limit False

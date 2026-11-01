@@ -1,0 +1,120 @@
+// Jenkins Multibranch Pipeline: PRs test/scan; protected main builds image, publishes, updates GitOps Dev.
+// Dedicated, trusted EC2 Docker agent recommended. Configure Vault, Sonar, Nexus, AWS role, Git credentials first.
+pipeline {
+  agent { label 'linux-dotnet10-docker' }
+  options { timestamps(); disableConcurrentBuilds(); timeout(time: 90, unit: 'MINUTES') }
+  environment {
+    AWS_REGION = 'ap-south-1'
+    ECR_REGISTRY = 'REPLACE_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com'
+    ECR_REPOSITORY = 'paintstudio-dev'
+    GITOPS_REPO = 'git@github.com:YOUR_ORG/paintstudio-gitops.git'
+    NEXUS_RAW_REPO = 'https://nexus.example.com/repository/paintstudio-raw'
+  }
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        script {
+          env.IMAGE_TAG = sh(script: 'git rev-parse --short=12 HEAD', returnStdout: true).trim()
+          env.IMAGE_URI = "${env.ECR_REGISTRY}/${env.ECR_REPOSITORY}:${env.IMAGE_TAG}"
+        }
+      }
+    }
+    stage('Secret Detection - Gitleaks') {
+      steps { sh 'gitleaks git --redact --exit-code 1 .' }
+    }
+    stage('.NET Restore and Tests') {
+      steps {
+        sh 'dotnet restore PaintStudio.slnx'
+        sh 'dotnet test PaintStudio.slnx -c Release --no-restore --logger "trx;LogFileName=tests.trx"'
+      }
+      post { always { archiveArtifacts artifacts: '**/TestResults/*.trx', allowEmptyArchive: true } }
+    }
+    stage('Dependency/SAST Vulnerability - Trivy') {
+      steps { sh 'trivy fs --scanners vuln,secret --severity HIGH,CRITICAL --exit-code 1 .' }
+    }
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('sonarqube') {
+          withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+            sh '''
+              set +x
+              dotnet sonarscanner begin /k:"paintstudio-dev" /d:sonar.host.url="$SONAR_HOST_URL" /d:sonar.token="$SONAR_TOKEN"
+              dotnet build PaintStudio.slnx -c Release --no-restore
+              dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+            '''
+          }
+        }
+      }
+    }
+    stage('Sonar Quality Gate') {
+      steps { timeout(time: 10, unit: 'MINUTES') { waitForQualityGate abortPipeline: true } }
+    }
+    stage('Publish Build Artifact to Nexus') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          dotnet publish src/PaintStudio.Api/PaintStudio.Api.csproj -c Release -o publish --no-restore
+          tar -czf "paintstudio-${IMAGE_TAG}.tar.gz" -C publish .
+        '''
+        withVault([
+          configuration: [vaultUrl: 'https://vault.example.com:8200', vaultCredentialId: 'vault-approle', engineVersion: 2],
+          vaultSecrets: [[path: 'kv/ci/nexus', engineVersion: 2, secretValues: [
+            [vaultKey: 'username', envVar: 'NEXUS_USER'],
+            [vaultKey: 'password', envVar: 'NEXUS_PASS']
+          ]]]
+        ]) {
+          sh '''
+            set +x
+            curl --fail --silent --show-error --user "$NEXUS_USER:$NEXUS_PASS" \
+              --upload-file "paintstudio-${IMAGE_TAG}.tar.gz" \
+              "${NEXUS_RAW_REPO}/paintstudio-${IMAGE_TAG}.tar.gz"
+          '''
+        }
+      }
+    }
+    stage('Container Build / Scan') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          docker build --pull -t "$IMAGE_URI" .
+          trivy image --severity HIGH,CRITICAL --exit-code 1 "$IMAGE_URI"
+        '''
+      }
+    }
+    stage('Push Immutable Image to ECR') {
+      when { branch 'main' }
+      steps {
+        sh '''
+          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+          docker push "$IMAGE_URI"
+          aws ecr describe-images --region "$AWS_REGION" --repository-name "$ECR_REPOSITORY" \
+            --image-ids "imageTag=$IMAGE_TAG" --query 'imageDetails[0].imageDigest' --output text
+        '''
+      }
+    }
+    stage('Update Dev GitOps Desired State') {
+      when { branch 'main' }
+      steps {
+        sshagent(credentials: ['gitops-deploy-key']) {
+          sh '''
+            git clone "$GITOPS_REPO" gitops
+            python3 scripts/update_kustomize_tag.py gitops/overlays/dev/kustomization.yaml "$IMAGE_TAG"
+            git -C gitops config user.email "jenkins-bot@example.invalid"
+            git -C gitops config user.name "PaintStudio CI"
+            git -C gitops add overlays/dev/kustomization.yaml
+            if ! git -C gitops diff --cached --quiet; then
+              git -C gitops commit -m "ci: deploy paintstudio-dev ${IMAGE_TAG}"
+              git -C gitops push origin HEAD:main
+            fi
+          '''
+        }
+      }
+    }
+  }
+  post {
+    success { echo "CI passed. Argo CD will reconcile Dev if GitOps changed." }
+    failure { echo 'Pipeline failed; investigate the first failed quality/security stage.' }
+    always { cleanWs() }
+  }
+}

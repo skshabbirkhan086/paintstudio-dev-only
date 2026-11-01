@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: paintstudio
+  labels: { app.kubernetes.io/name: paintstudio }
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: { app.kubernetes.io/name: paintstudio }
+  template:
+    metadata:
+      labels: { app.kubernetes.io/name: paintstudio }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 1654, seccompProfile: { type: RuntimeDefault } }
+      containers:
+        - name: paintstudio
+          image: paintstudio:bootstrap
+          imagePullPolicy: IfNotPresent
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - name: ASPNETCORE_ENVIRONMENT
+              value: Production
+            - name: PaintDb__Server
+              valueFrom: { configMapKeyRef: { name: paintstudio-config, key: server } }
+            - name: PaintDb__User
+              valueFrom: { secretKeyRef: { name: paintstudio-db, key: username } }
+            - name: PaintDb__Password
+              valueFrom: { secretKeyRef: { name: paintstudio-db, key: password } }
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            initialDelaySeconds: 8
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            initialDelaySeconds: 5
+            periodSeconds: 15
