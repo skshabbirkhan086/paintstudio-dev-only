@@ -51,7 +51,7 @@ module "ecr" {
   kms_key_arn = aws_kms_key.data.arn
 }
 module "sqlserver" {
-  source                     = "git::https://github.com/skshabbirkhan086/paintstudio-dev-only.git//paintstudio-terraform-modules/modules/sqlserver?ref=v0.1.0"
+  source                     = "git::https://github.com/skshabbirkhan086/paintstudio-dev-only.git//paintstudio-terraform-modules/modules/sqlserver?ref=v0.1.1"
   name                       = local.name
   vpc_id                     = module.network.vpc_id
   eks_node_security_group_id = module.eks.node_security_group_id

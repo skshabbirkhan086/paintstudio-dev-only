@@ -17,7 +17,7 @@
   },
   "eks": {
     "version": "1.36",
-    "instance_type": "m7i-flex",
+    "instance_type": "m7i-flex.large",
     "desired_size": 2,
     "min_size": 1,
     "max_size": 3,
@@ -27,7 +27,7 @@
   },
   "sqlserver": {
     "engine": "sqlserver-ex",
-    "instance_class": "db.t3.small",
+    "instance_class": "db.t3.micro",
     "storage_gb": 20,
     "multi_az": false
   },

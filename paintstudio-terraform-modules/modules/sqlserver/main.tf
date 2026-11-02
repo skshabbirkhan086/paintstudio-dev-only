@@ -42,7 +42,7 @@ resource "aws_db_instance" "db" {
   db_subnet_group_name = aws_db_subnet_group.private.name
   vpc_security_group_ids = [aws_security_group.db.id]
   publicly_accessible = false
-  backup_retention_period = 7
+  backup_retention_period = 1
   skip_final_snapshot = true # Dev only. Before destroy, take a manual snapshot if important.
   deletion_protection = false
   auto_minor_version_upgrade = true
