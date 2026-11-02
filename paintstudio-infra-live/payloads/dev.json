@@ -16,13 +16,13 @@
     "single_nat_gateway": true
   },
   "eks": {
-    "version": "1.34",
+    "version": "1.36",
     "instance_type": "t3.large",
     "desired_size": 2,
     "min_size": 1,
     "max_size": 3,
     "public_access_cidrs": [
-      "203.0.113.10/32"
+      "122.168.6.226/32"
     ]
   },
   "sqlserver": {
@@ -35,6 +35,6 @@
     "enabled": false,
     "data_nodes": 1,
     "volume_gb": 20,
-    "admin_role_arn": "arn:aws:iam::REPLACE_ACCOUNT_ID:role/paintstudio-os-admin"
+    "admin_role_arn": "arn:aws:iam::645674817364:role/paintstudio-os-admin"
   }
 }

@@ -3,7 +3,7 @@ serviceAccount:
   create: true
   name: fluent-bit
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::REPLACE_ACCOUNT_ID:role/paintstudio-dev-fluent-bit
+    eks.amazonaws.com/role-arn: arn:aws:iam::645674817364:role/paintstudio-dev-fluent-bit
 config:
   service: |
     [SERVICE]

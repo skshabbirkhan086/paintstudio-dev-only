@@ -5,7 +5,7 @@ resources:
   - ../../base
 images:
   - name: paintstudio
-    newName: REPLACE_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/paintstudio-dev
+    newName: 645674817364.dkr.ecr.ap-south-1.amazonaws.com/paintstudio-dev
     newTag: bootstrap
 replicas:
   - name: paintstudio

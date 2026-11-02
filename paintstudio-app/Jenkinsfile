@@ -5,9 +5,9 @@ pipeline {
   options { timestamps(); disableConcurrentBuilds(); timeout(time: 90, unit: 'MINUTES') }
   environment {
     AWS_REGION = 'ap-south-1'
-    ECR_REGISTRY = 'REPLACE_ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com'
+    ECR_REGISTRY = '645674817364.dkr.ecr.ap-south-1.amazonaws.com'
     ECR_REPOSITORY = 'paintstudio-dev'
-    GITOPS_REPO = 'git@github.com:YOUR_ORG/paintstudio-gitops.git'
+    GITOPS_REPO = 'git@github.com:skshabbirkhan086/paintstudio-gitops.git'
     NEXUS_RAW_REPO = 'https://nexus.example.com/repository/paintstudio-raw'
   }
   stages {
