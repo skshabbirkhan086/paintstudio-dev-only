@@ -1,0 +1,10 @@
+**/.env
+**/.env.*
+!**/.env.example
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+**/dev-plan.txt
+**/crash.log
+**/crash.*.log
